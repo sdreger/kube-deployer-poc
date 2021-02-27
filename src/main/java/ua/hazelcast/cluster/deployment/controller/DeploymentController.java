@@ -1,6 +1,5 @@
 package ua.hazelcast.cluster.deployment.controller;
 
-import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

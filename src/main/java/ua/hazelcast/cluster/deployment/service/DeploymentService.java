@@ -1,6 +1,5 @@
 package ua.hazelcast.cluster.deployment.service;
 
-import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import ua.hazelcast.cluster.deployment.dto.CreateDeploymentRequest;
