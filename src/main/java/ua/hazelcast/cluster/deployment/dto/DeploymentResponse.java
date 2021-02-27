@@ -5,16 +5,16 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 @Data
-@Builder
 public class DeploymentResponse {
 
     private String apiVersion;
 
     private String namespace;
 
-    private String uid;
+    private UUID uid;
 
     private LocalDateTime creationTimestamp;
 

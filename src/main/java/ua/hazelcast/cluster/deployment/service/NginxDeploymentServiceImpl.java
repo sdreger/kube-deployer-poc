@@ -8,13 +8,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ua.hazelcast.cluster.deployment.dto.CreateDeploymentRequest;
 import ua.hazelcast.cluster.deployment.dto.DeploymentResponse;
+import ua.hazelcast.cluster.deployment.entity.DeploymentEntity;
+import ua.hazelcast.cluster.deployment.mapper.DeploymentResponseMapper;
+import ua.hazelcast.cluster.deployment.repository.DeploymentRepository;
 
+import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Service
+@Transactional
 public class NginxDeploymentServiceImpl implements DeploymentService {
 
     private static final String CONTAINER_IMAGE_VERSION = "1.14.2";
@@ -23,9 +29,17 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
 
     private final KubernetesClient clusterClient;
 
+    private final DeploymentRepository deploymentRepository;
+
+    private final DeploymentResponseMapper deploymentResponseMapper;
+
     @Autowired
-    public NginxDeploymentServiceImpl(KubernetesClient clusterClient) {
+    public NginxDeploymentServiceImpl(final KubernetesClient clusterClient,
+                                      final DeploymentRepository deploymentRepository,
+                                      final DeploymentResponseMapper deploymentResponseMapper) {
         this.clusterClient = clusterClient;
+        this.deploymentRepository = deploymentRepository;
+        this.deploymentResponseMapper = deploymentResponseMapper;
     }
 
     @Override
@@ -73,15 +87,19 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
 
         final LocalDateTime creationTime = LocalDateTime
                 .parse(createdDeployment.getMetadata().getCreationTimestamp(), DateTimeFormatter.ISO_DATE_TIME);
-        return DeploymentResponse.builder()
-                .apiVersion(createdDeployment.getApiVersion())
-                .namespace(namespace)
-                .name(name)
-                .uid(createdDeployment.getMetadata().getUid())
-                .creationTimestamp(creationTime)
-                .labels(deploymentLabels)
-                .replicaCount(replicaCount)
-                .containerPort(containerPort)
-                .build();
+        final UUID uid = UUID.fromString(createdDeployment.getMetadata().getUid());
+
+        final DeploymentEntity deploymentEntity = new DeploymentEntity();
+        deploymentEntity.setApiVersion(createdDeployment.getApiVersion());
+        deploymentEntity.setNamespace(namespace);
+        deploymentEntity.setName(name);
+        deploymentEntity.setUid(uid);
+        deploymentEntity.setCreationTimestamp(creationTime);
+        deploymentEntity.setLabels(deploymentLabels);
+        deploymentEntity.setReplicaCount(replicaCount);
+        deploymentEntity.setContainerPort(containerPort);
+        deploymentRepository.save(deploymentEntity);
+
+        return deploymentResponseMapper.toDeploymentResponse(deploymentEntity);
     }
 }
