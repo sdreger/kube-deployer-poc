@@ -18,16 +18,23 @@ public interface DeploymentService {
     /**
      * Get an existing deployment from the given kubernetes cluster.
      *
+     * @param pageable - pagination object.
+     * @return - existing deployments list representation.
+     */
+    Page<DeploymentResponse> getDeployments(Pageable pageable);
+
+    /**
+     * Get an existing deployment from the given kubernetes cluster.
+     *
      * @param deploymentId - deployment id for retrieval.
      * @return - an existing deployment representation.
      */
     DeploymentResponse getDeployment(Long deploymentId);
 
     /**
-     * Get an existing deployment from the given kubernetes cluster.
+     * Delete an existing deployment from the given kubernetes cluster.
      *
-     * @param pageable - pagination object.
-     * @return - existing deployments list representation.
+     * @param deploymentId - deployment id for deletion.
      */
-    Page<DeploymentResponse> getDeployments(Pageable pageable);
+    void deleteDeployment(Long deploymentId);
 }

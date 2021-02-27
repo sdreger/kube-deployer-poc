@@ -35,4 +35,15 @@ public class DeploymentController {
     public Page<DeploymentResponse> getDeployments(final @PageableDefault(size = 50) Pageable pageable) {
         return deploymentService.getDeployments(pageable);
     }
+
+    @GetMapping("/{deploymentId}")
+    public DeploymentResponse getDeployment(final @PathVariable Long deploymentId) {
+        return deploymentService.getDeployment(deploymentId);
+    }
+
+    @DeleteMapping("/{deploymentId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteDeployment(final @PathVariable Long deploymentId) {
+        deploymentService.deleteDeployment(deploymentId);
+    }
 }

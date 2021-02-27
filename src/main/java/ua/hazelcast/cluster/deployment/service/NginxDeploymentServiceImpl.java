@@ -59,31 +59,31 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
         final Integer replicaCount = createDeploymentRequest.getReplicaCount();
         Deployment deployment = new DeploymentBuilder()
                 .withNewMetadata()
-                    .withName(name)
-                    .addToLabels(deploymentLabels)
-                    .endMetadata()
+                .withName(name)
+                .addToLabels(deploymentLabels)
+                .endMetadata()
                 .withNewSpec()
-                    .withReplicas(replicaCount)
-                    .withNewSelector()
-                        .withMatchLabels(deploymentLabels)
-                    .endSelector()
-                    .withNewTemplate()
-                        .withNewMetadata()
-                            .addToLabels(deploymentLabels)
-                        .endMetadata()
-                        .withNewSpec()
-                            .addNewContainer()
-                                .withName(name)
-                                .withImage(container)
-                                .withPorts()
-                                    .addNewPort()
-                                        .withContainerPort(containerPort)
-                                    .endPort()
-                            .endContainer()
-                        .endSpec()
-                    .endTemplate()
+                .withReplicas(replicaCount)
+                .withNewSelector()
+                .withMatchLabels(deploymentLabels)
+                .endSelector()
+                .withNewTemplate()
+                .withNewMetadata()
+                .addToLabels(deploymentLabels)
+                .endMetadata()
+                .withNewSpec()
+                .addNewContainer()
+                .withName(name)
+                .withImage(container)
+                .withPorts()
+                .addNewPort()
+                .withContainerPort(containerPort)
+                .endPort()
+                .endContainer()
                 .endSpec()
-            .build();
+                .endTemplate()
+                .endSpec()
+                .build();
 
         final Deployment createdDeployment = clusterClient.apps()
                 .deployments()
@@ -121,5 +121,16 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
                 .map(deploymentResponseMapper::toDeploymentResponse)
                 .collect(Collectors.toList());
         return new PageImpl<>(pageList, pageable, page.getTotalElements());
+    }
+
+    @Override
+    public void deleteDeployment(Long deploymentId) {
+        final DeploymentEntity existingDeployment = deploymentRepository.getOne(deploymentId);
+        clusterClient.apps()
+                .deployments()
+                .inNamespace(existingDeployment.getNamespace())
+                .withName(existingDeployment.getName())
+                .delete();
+        deploymentRepository.delete(existingDeployment);
     }
 }
