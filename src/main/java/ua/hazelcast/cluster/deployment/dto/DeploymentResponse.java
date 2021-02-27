@@ -1,6 +1,5 @@
 package ua.hazelcast.cluster.deployment.dto;
 
-import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -9,6 +8,8 @@ import java.util.UUID;
 
 @Data
 public class DeploymentResponse {
+
+    private Long id;
 
     private String apiVersion;
 

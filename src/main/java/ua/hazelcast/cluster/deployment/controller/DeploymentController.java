@@ -26,7 +26,12 @@ public class DeploymentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public DeploymentResponse createDeployment(@RequestBody CreateDeploymentRequest createDeploymentRequest) {
+    public DeploymentResponse createDeployment(final @RequestBody CreateDeploymentRequest createDeploymentRequest) {
         return deploymentService.createDeployment(createDeploymentRequest);
+    }
+
+    @GetMapping("/{deploymentId}")
+    public DeploymentResponse getDeployment(final @PathVariable Long deploymentId) {
+        return deploymentService.getDeployment(deploymentId);
     }
 }

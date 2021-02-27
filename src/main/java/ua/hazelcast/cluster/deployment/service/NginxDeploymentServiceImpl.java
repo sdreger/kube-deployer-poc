@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import ua.hazelcast.cluster.deployment.dto.CreateDeploymentRequest;
 import ua.hazelcast.cluster.deployment.dto.DeploymentResponse;
 import ua.hazelcast.cluster.deployment.entity.DeploymentEntity;
+import ua.hazelcast.cluster.deployment.exception.ApplicationException;
 import ua.hazelcast.cluster.deployment.mapper.DeploymentResponseMapper;
 import ua.hazelcast.cluster.deployment.repository.DeploymentRepository;
 
@@ -16,6 +17,7 @@ import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -101,5 +103,10 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
         deploymentRepository.save(deploymentEntity);
 
         return deploymentResponseMapper.toDeploymentResponse(deploymentEntity);
+    }
+
+    @Override
+    public DeploymentResponse getDeployment(Long deploymentId) {
+        return deploymentResponseMapper.toDeploymentResponse(deploymentRepository.getOne(deploymentId));
     }
 }

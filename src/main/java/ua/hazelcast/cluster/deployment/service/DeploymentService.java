@@ -12,4 +12,12 @@ public interface DeploymentService {
      * @return - a created deployment representation.
      */
     DeploymentResponse createDeployment(CreateDeploymentRequest createDeploymentRequest);
+
+    /**
+     * Get an existing deployment from the given kubernetes cluster.
+     *
+     * @param deploymentId - deployment id for retrieval.
+     * @return - an existing deployment representation.
+     */
+    DeploymentResponse getDeployment(Long deploymentId);
 }
