@@ -1,0 +1,29 @@
+### The application healthchecks
+GET http://localhost:8080/actuator/health
+
+### Create a NGINX deployment
+POST http://localhost:8080/deployment
+Content-Type: application/json
+
+{
+  "namespace": "default",
+  "name": "test-nginx-1",
+  "labels": {
+    "app": "nignx",
+    "env": "uat"
+  },
+  "containerPort": 80,
+  "replicaCount": 20
+}
+
+### Get a NGINX deployment status
+GET http://localhost:8080/deployment/rolling/status/1?watch=true
+
+### Get a NGINX deployments list
+GET http://localhost:8080/deployment
+
+### Get a NGINX deployment
+GET http://localhost:8080/deployment/1
+
+### Delete a NGINX deployment
+DELETE http://localhost:8080/deployment/1
