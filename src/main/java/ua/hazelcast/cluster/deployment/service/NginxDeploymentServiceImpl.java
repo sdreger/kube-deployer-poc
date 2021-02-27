@@ -2,6 +2,7 @@ package ua.hazelcast.cluster.deployment.service;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
+import io.fabric8.kubernetes.api.model.apps.DeploymentCondition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,18 +10,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ua.hazelcast.cluster.deployment.dto.CreateDeploymentRequest;
 import ua.hazelcast.cluster.deployment.dto.DeploymentResponse;
+import ua.hazelcast.cluster.deployment.dto.DeploymentStatusResponse;
 import ua.hazelcast.cluster.deployment.entity.DeploymentEntity;
 import ua.hazelcast.cluster.deployment.mapper.DeploymentResponseMapper;
 import ua.hazelcast.cluster.deployment.repository.DeploymentRepository;
 
-import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -31,6 +32,16 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
     private static final String CONTAINER_IMAGE_VERSION = "1.14.2";
 
     private static final String CONTAINER_IMAGE = "nginx";
+
+    private static final String UNKNOWN = "Unknown";
+
+    private static final String CONDITION_TYPE_AVAILABLE = "Available";
+
+    private static final String CONDITION_REASON_AVAILABLE = "MinimumReplicasAvailable";
+
+    private static final long REPEAT_STATUS_CHECK_INTERVAL_SECONDS = 1L;
+
+    private static final int REPEAT_STATUS_CHECK_ROUNDS = 30;
 
     private final KubernetesClient clusterClient;
 
@@ -59,31 +70,31 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
         final Integer replicaCount = createDeploymentRequest.getReplicaCount();
         Deployment deployment = new DeploymentBuilder()
                 .withNewMetadata()
-                .withName(name)
-                .addToLabels(deploymentLabels)
-                .endMetadata()
+                    .withName(name)
+                    .addToLabels(deploymentLabels)
+                    .endMetadata()
                 .withNewSpec()
-                .withReplicas(replicaCount)
-                .withNewSelector()
-                .withMatchLabels(deploymentLabels)
-                .endSelector()
-                .withNewTemplate()
-                .withNewMetadata()
-                .addToLabels(deploymentLabels)
-                .endMetadata()
-                .withNewSpec()
-                .addNewContainer()
-                .withName(name)
-                .withImage(container)
-                .withPorts()
-                .addNewPort()
-                .withContainerPort(containerPort)
-                .endPort()
-                .endContainer()
+                    .withReplicas(replicaCount)
+                    .withNewSelector()
+                        .withMatchLabels(deploymentLabels)
+                    .endSelector()
+                    .withNewTemplate()
+                        .withNewMetadata()
+                            .addToLabels(deploymentLabels)
+                        .endMetadata()
+                        .withNewSpec()
+                            .addNewContainer()
+                                .withName(name)
+                                .withImage(container)
+                                .withPorts()
+                                    .addNewPort()
+                                        .withContainerPort(containerPort)
+                                    .endPort()
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
                 .endSpec()
-                .endTemplate()
-                .endSpec()
-                .build();
+            .build();
 
         final Deployment createdDeployment = clusterClient.apps()
                 .deployments()
@@ -109,12 +120,14 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
     }
 
     @Override
-    public DeploymentResponse getDeployment(Long deploymentId) {
+    @Transactional(readOnly = true)
+    public DeploymentResponse getDeployment(final Long deploymentId) {
         return deploymentResponseMapper.toDeploymentResponse(deploymentRepository.getOne(deploymentId));
     }
 
     @Override
-    public Page<DeploymentResponse> getDeployments(Pageable pageable) {
+    @Transactional(readOnly = true)
+    public Page<DeploymentResponse> getDeployments(final Pageable pageable) {
         final Page<DeploymentEntity> page = deploymentRepository.findAll(pageable);
         final List<DeploymentResponse> pageList = page.getContent()
                 .stream()
@@ -124,7 +137,7 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
     }
 
     @Override
-    public void deleteDeployment(Long deploymentId) {
+    public void deleteDeployment(final Long deploymentId) {
         final DeploymentEntity existingDeployment = deploymentRepository.getOne(deploymentId);
         clusterClient.apps()
                 .deployments()
@@ -132,5 +145,61 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
                 .withName(existingDeployment.getName())
                 .delete();
         deploymentRepository.delete(existingDeployment);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DeploymentStatusResponse getDeploymentRollingStatus(final Long deploymentId, final boolean watch) {
+        log.debug("Getting a deployment rolling status. Id {}. Watch: {}", deploymentId, watch);
+
+        final DeploymentEntity existingDeployment = deploymentRepository.getOne(deploymentId);
+        DeploymentStatusResponse deploymentStatus = getDeploymentStatus(existingDeployment);
+        if (deploymentStatus.isRolloutComplete() || !watch) {
+            return deploymentStatus;
+        }
+
+        int checkRound = 0;
+        while (!deploymentStatus.isRolloutComplete() || checkRound == REPEAT_STATUS_CHECK_ROUNDS) {
+            try {
+                TimeUnit.SECONDS.sleep(REPEAT_STATUS_CHECK_INTERVAL_SECONDS);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+            deploymentStatus = getDeploymentStatus(existingDeployment);
+            checkRound++;
+        }
+
+        return deploymentStatus;
+    }
+
+    private DeploymentStatusResponse getDeploymentStatus(final DeploymentEntity existingDeployment) {
+        final Deployment deployment = clusterClient.apps()
+                .deployments()
+                .inNamespace(existingDeployment.getNamespace())
+                .withName(existingDeployment.getName())
+                .get();
+        final Optional<DeploymentCondition> lastCondition = getLastCondition(deployment);
+        if (lastCondition.isEmpty()) {
+            return new DeploymentStatusResponse(UNKNOWN, UNKNOWN, false);
+        }
+
+        final DeploymentCondition condition = lastCondition.get();
+        return new DeploymentStatusResponse(
+                condition.getReason(),
+                condition.getMessage(),
+                isRolloutComplete(condition)
+        );
+    }
+
+    private Optional<DeploymentCondition> getLastCondition(final Deployment deployment) {
+        return deployment.getStatus()
+                .getConditions()
+                .stream()
+                .max(Comparator.comparing(DeploymentCondition::getLastTransitionTime));
+    }
+
+    private boolean isRolloutComplete(final DeploymentCondition deploymentCondition) {
+        return deploymentCondition.getType().equals(CONDITION_TYPE_AVAILABLE)
+                && deploymentCondition.getReason().equals(CONDITION_REASON_AVAILABLE);
     }
 }

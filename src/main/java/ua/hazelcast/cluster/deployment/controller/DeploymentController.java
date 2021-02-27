@@ -1,5 +1,6 @@
 package ua.hazelcast.cluster.deployment.controller;
 
+import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import ua.hazelcast.cluster.deployment.dto.CreateDeploymentRequest;
 import ua.hazelcast.cluster.deployment.dto.DeploymentResponse;
+import ua.hazelcast.cluster.deployment.dto.DeploymentStatusResponse;
 import ua.hazelcast.cluster.deployment.service.DeploymentService;
 
 /**
@@ -29,6 +31,13 @@ public class DeploymentController {
     @ResponseStatus(HttpStatus.CREATED)
     public DeploymentResponse createDeployment(final @RequestBody CreateDeploymentRequest createDeploymentRequest) {
         return deploymentService.createDeployment(createDeploymentRequest);
+    }
+
+    @GetMapping("/rolling/status/{deploymentId}")
+    public DeploymentStatusResponse getDeploymentRollingStatus(
+            final @PathVariable Long deploymentId,
+            final @RequestParam(name = "watch", defaultValue = "true", required = false) boolean watch) {
+        return deploymentService.getDeploymentRollingStatus(deploymentId, watch);
     }
 
     @GetMapping
