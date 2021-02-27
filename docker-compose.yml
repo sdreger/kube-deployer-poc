@@ -1,0 +1,38 @@
+version: '3.1'
+
+services:
+  postgres:
+    image: postgres:12.6
+    restart: always
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: kube_deployer
+
+  adminer:
+    image: adminer:4.8.0
+    restart: always
+    ports:
+      - 9090:8080
+    depends_on:
+      - postgres
+
+  application:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: build/libs/*.jar
+    environment:
+      - SPRING_DATASOURCE_HOST=postgres
+      - SPRING_FLYWAY_ENABLED=true
+      - KUBERNETES_MASTER=https://192.168.99.100:8443
+      - KUBERNETES_CERTS_CA_FILE=/home/spring-user/.minikube/ca.crt
+      - KUBERNETES_CERTS_CLIENT_FILE=/home/spring-user/.minikube/profiles/minikube/client.crt
+      - KUBERNETES_CERTS_CLIENT_KEY_FILE=/home/spring-user/.minikube/profiles/minikube/client.key
+    volumes:
+      - ~/.minikube:/home/spring-user/.minikube
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
