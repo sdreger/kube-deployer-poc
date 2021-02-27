@@ -5,20 +5,23 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ua.hazelcast.cluster.deployment.dto.CreateDeploymentRequest;
 import ua.hazelcast.cluster.deployment.dto.DeploymentResponse;
 import ua.hazelcast.cluster.deployment.entity.DeploymentEntity;
-import ua.hazelcast.cluster.deployment.exception.ApplicationException;
 import ua.hazelcast.cluster.deployment.mapper.DeploymentResponseMapper;
 import ua.hazelcast.cluster.deployment.repository.DeploymentRepository;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -108,5 +111,15 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
     @Override
     public DeploymentResponse getDeployment(Long deploymentId) {
         return deploymentResponseMapper.toDeploymentResponse(deploymentRepository.getOne(deploymentId));
+    }
+
+    @Override
+    public Page<DeploymentResponse> getDeployments(Pageable pageable) {
+        final Page<DeploymentEntity> page = deploymentRepository.findAll(pageable);
+        final List<DeploymentResponse> pageList = page.getContent()
+                .stream()
+                .map(deploymentResponseMapper::toDeploymentResponse)
+                .collect(Collectors.toList());
+        return new PageImpl<>(pageList, pageable, page.getTotalElements());
     }
 }
