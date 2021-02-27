@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import ua.hazelcast.cluster.deployment.dto.CreateDeploymentRequest;
+import ua.hazelcast.cluster.deployment.dto.DeploymentResponse;
 import ua.hazelcast.cluster.deployment.service.DeploymentService;
 
 /**
@@ -25,7 +26,7 @@ public class DeploymentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public void createDeployment(@RequestBody CreateDeploymentRequest createDeploymentRequest) {
-        deploymentService.createDeployment(createDeploymentRequest);
+    public DeploymentResponse createDeployment(@RequestBody CreateDeploymentRequest createDeploymentRequest) {
+        return deploymentService.createDeployment(createDeploymentRequest);
     }
 }
