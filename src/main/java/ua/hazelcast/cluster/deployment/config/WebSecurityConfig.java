@@ -55,6 +55,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
         http.cors()
                 .and().authorizeRequests()
+                .antMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                 .antMatchers(HttpMethod.POST, "/api/user/signup").permitAll()
                 .antMatchers(HttpMethod.POST, "/api/user/login").permitAll()
                 .anyRequest().authenticated()

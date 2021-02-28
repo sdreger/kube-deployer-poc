@@ -1,9 +1,35 @@
 ### The application healthchecks
 GET http://localhost:8080/actuator/health
 
-### Create a NGINX deployment
-POST http://localhost:8080/deployment
+### Signup and create a new user
+POST http://localhost:8080/api/user/signup
 Content-Type: application/json
+
+{
+  "email": "test@hazelcast.com",
+  "password": "testSecurePassword",
+  "firstName": "Test First Name",
+  "lastName": "Test Last Name",
+  "roles": ["ROLE_USER"]
+}
+
+### Get an access token, and store it in the variable
+POST http://localhost:8080/api/user/login
+Content-Type: application/json
+
+{
+  "email": "test@hazelcast.com",
+  "password": "testSecurePassword"
+}
+
+> {%
+    client.global.set("access_token", response.body["access_token"]);
+%}
+
+### Create a NGINX deployment
+POST http://localhost:8080/api/deployment
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
 
 {
   "namespace": "default",
@@ -13,17 +39,21 @@ Content-Type: application/json
     "env": "uat"
   },
   "containerPort": 80,
-  "replicaCount": 20
+  "replicaCount": 1
 }
 
 ### Get a NGINX deployment status
-GET http://localhost:8080/deployment/rolling/status/1?watch=true
+GET http://localhost:8080/api/deployment/rolling/status/1?watch=true
+Authorization: Bearer {{access_token}}
 
 ### Get a NGINX deployments list
-GET http://localhost:8080/deployment
+GET http://localhost:8080/api/deployment
+Authorization: Bearer {{access_token}}
 
 ### Get a NGINX deployment
-GET http://localhost:8080/deployment/1
+GET http://localhost:8080/api/deployment/1
+Authorization: Bearer {{access_token}}
 
 ### Delete a NGINX deployment
-DELETE http://localhost:8080/deployment/1
+DELETE http://localhost:8080/api/deployment/1
+Authorization: Bearer {{access_token}}
