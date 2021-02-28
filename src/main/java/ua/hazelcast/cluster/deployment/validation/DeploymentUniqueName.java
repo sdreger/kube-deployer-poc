@@ -3,7 +3,10 @@ package ua.hazelcast.cluster.deployment.validation;
 import org.springframework.beans.factory.annotation.Autowired;
 import ua.hazelcast.cluster.deployment.repository.DeploymentRepository;
 
-import javax.validation.*;
+import javax.validation.Constraint;
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+import javax.validation.Payload;
 import javax.validation.constraints.NotNull;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -13,7 +16,6 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 
 @NotNull
-@ReportAsSingleViolation
 @Target({ElementType.FIELD, ANNOTATION_TYPE, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = DeploymentUniqueName.Validator.class)

@@ -18,8 +18,8 @@ public class CreateDeploymentRequest {
     @NotBlank(message = "Namespace must not be blank")
     private String namespace;
 
-    @DeploymentUniqueName
     @NotBlank(message = "Name must not be blank")
+    @DeploymentUniqueName
     private String name;
 
     @NotEmpty(message = "Labels must contain at least one entry")

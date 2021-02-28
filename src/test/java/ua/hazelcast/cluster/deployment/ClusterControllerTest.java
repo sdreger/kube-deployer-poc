@@ -1,15 +1,11 @@
 package ua.hazelcast.cluster.deployment;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.web.servlet.MockMvc;
 import ua.hazelcast.cluster.deployment.dto.CreateDeploymentRequest;
 import ua.hazelcast.cluster.deployment.dto.DeploymentResponse;
 import ua.hazelcast.cluster.deployment.dto.DeploymentStatusResponse;
@@ -24,19 +20,10 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@AutoConfigureMockMvc
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class ClusterControllerTest extends AbstractClusterTest {
+public class ClusterControllerTest extends AbstractControllerTest {
 
-    private static final String URL_DEPLOYMENTS = "/deployment";
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    private static final String URL_DEPLOYMENTS = "/api/deployment";
 
     @Test
     public void shouldCreateDeployment() throws Exception {
@@ -49,7 +36,7 @@ public class ClusterControllerTest extends AbstractClusterTest {
 
         final MockHttpServletResponse response = this.mockMvc.perform(post(URL_DEPLOYMENTS)
                 .contentType(MediaType.APPLICATION_JSON)
-    //                        .header(HttpHeaders.AUTHORIZATION, getAccessTokenForSystemUser())
+                .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1())
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(status().isCreated())
@@ -87,6 +74,7 @@ public class ClusterControllerTest extends AbstractClusterTest {
 
         this.mockMvc.perform(post(URL_DEPLOYMENTS)
                 .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1())
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
@@ -108,6 +96,7 @@ public class ClusterControllerTest extends AbstractClusterTest {
 
         this.mockMvc.perform(post(URL_DEPLOYMENTS)
                 .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1())
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
@@ -128,6 +117,7 @@ public class ClusterControllerTest extends AbstractClusterTest {
 
         this.mockMvc.perform(post(URL_DEPLOYMENTS)
                 .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1())
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
@@ -149,6 +139,7 @@ public class ClusterControllerTest extends AbstractClusterTest {
 
         this.mockMvc.perform(post(URL_DEPLOYMENTS)
                 .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1())
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
@@ -170,6 +161,7 @@ public class ClusterControllerTest extends AbstractClusterTest {
 
         this.mockMvc.perform(post(URL_DEPLOYMENTS)
                 .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1())
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
@@ -194,6 +186,7 @@ public class ClusterControllerTest extends AbstractClusterTest {
 
         this.mockMvc.perform(post(URL_DEPLOYMENTS)
                 .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1())
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
@@ -220,6 +213,7 @@ public class ClusterControllerTest extends AbstractClusterTest {
 
         this.mockMvc.perform(post(URL_DEPLOYMENTS)
                 .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1())
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
@@ -233,7 +227,8 @@ public class ClusterControllerTest extends AbstractClusterTest {
     public void shouldReturnDeployment() throws Exception {
         final DeploymentEntity testDeployment = createTestDeploymentEntity(DEPLOYMENT_NAME);
         final MockHttpServletResponse response = this.mockMvc
-                .perform(get(URL_DEPLOYMENTS + "/" + testDeployment.getId()))
+                .perform(get(URL_DEPLOYMENTS + "/" + testDeployment.getId())
+                        .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -251,7 +246,8 @@ public class ClusterControllerTest extends AbstractClusterTest {
     public void shouldNotReturnNonExistingDeployment() throws Exception {
 
         this.mockMvc
-                .perform(get(URL_DEPLOYMENTS + "/" + Long.MAX_VALUE))
+                .perform(get(URL_DEPLOYMENTS + "/" + Long.MAX_VALUE)
+                        .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1()))
                 .andDo(print())
                 .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
                 .andExpect(status().isBadRequest())
@@ -267,7 +263,8 @@ public class ClusterControllerTest extends AbstractClusterTest {
         final DeploymentEntity testDeployment1 = createTestDeploymentEntity(DEPLOYMENT_NAME + 1);
         final DeploymentEntity testDeployment2 = createTestDeploymentEntity(DEPLOYMENT_NAME + 2);
         final MockHttpServletResponse response = this.mockMvc
-                .perform(get(URL_DEPLOYMENTS))
+                .perform(get(URL_DEPLOYMENTS)
+                        .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -291,7 +288,8 @@ public class ClusterControllerTest extends AbstractClusterTest {
     public void shouldReturnDeploymentStatus() throws Exception {
         final DeploymentEntity testDeployment = createTestDeploymentEntity(DEPLOYMENT_NAME);
         final MockHttpServletResponse response = this.mockMvc
-                .perform(get(URL_DEPLOYMENTS + "/rolling/status/" + testDeployment.getId()))
+                .perform(get(URL_DEPLOYMENTS + "/rolling/status/" + testDeployment.getId())
+                        .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -312,7 +310,8 @@ public class ClusterControllerTest extends AbstractClusterTest {
     public void shouldNotReturnNonExistingDeploymentStatus() throws Exception {
 
         this.mockMvc
-                .perform(get(URL_DEPLOYMENTS + "/rolling/status/" + Long.MAX_VALUE))
+                .perform(get(URL_DEPLOYMENTS + "/rolling/status/" + Long.MAX_VALUE)
+                        .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1()))
                 .andDo(print())
                 .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
                 .andExpect(status().isBadRequest())
@@ -332,7 +331,8 @@ public class ClusterControllerTest extends AbstractClusterTest {
         doThrow(new KubernetesClientException(errorMessage)).when(client).apps();
 
         this.mockMvc
-                .perform(get(URL_DEPLOYMENTS + "/rolling/status/" + testDeployment.getId()))
+                .perform(get(URL_DEPLOYMENTS + "/rolling/status/" + testDeployment.getId())
+                        .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1()))
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.title").exists())
@@ -347,7 +347,8 @@ public class ClusterControllerTest extends AbstractClusterTest {
     public void shouldDeleteDeployment() throws Exception {
         final DeploymentEntity testDeployment = createTestDeploymentEntity(DEPLOYMENT_NAME);
         this.mockMvc
-                .perform(delete(URL_DEPLOYMENTS + "/" + testDeployment.getId()))
+                .perform(delete(URL_DEPLOYMENTS + "/" + testDeployment.getId())
+                        .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1()))
                 .andDo(print())
                 .andExpect(status().isNoContent());
 
@@ -359,7 +360,8 @@ public class ClusterControllerTest extends AbstractClusterTest {
     public void shouldNotDeleteNonExistingDeployment() throws Exception {
 
         this.mockMvc
-                .perform(delete(URL_DEPLOYMENTS + "/" + Long.MAX_VALUE))
+                .perform(delete(URL_DEPLOYMENTS + "/" + Long.MAX_VALUE)
+                        .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1()))
                 .andDo(print())
                 .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
                 .andExpect(status().isBadRequest())
@@ -379,7 +381,8 @@ public class ClusterControllerTest extends AbstractClusterTest {
         doThrow(new KubernetesClientException(errorMessage)).when(client).apps();
 
         this.mockMvc
-                .perform(delete(URL_DEPLOYMENTS + "/" + testDeployment.getId()))
+                .perform(delete(URL_DEPLOYMENTS + "/" + testDeployment.getId())
+                        .header(HttpHeaders.AUTHORIZATION, getAccessTokenForUser1()))
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.title").exists())
