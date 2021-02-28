@@ -18,3 +18,8 @@ spring:
     url: "jdbc:postgresql://${spring.datasource.host}:${spring.datasource.port}/${spring.datasource.database}"
     username: test
     password: test
+  security:
+    jwt:
+      token:
+        secret-key: change-me
+        expiration-time: 600_000 # in milliseconds. 10 minutes token expiration by default

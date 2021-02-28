@@ -25,11 +25,13 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.flywaydb:flyway-core'
     implementation "io.fabric8:kubernetes-client:${fabric8version}"
     implementation "org.hibernate.validator:hibernate-validator:${hibernateValidatorVersion}"
     implementation "org.zalando:problem-spring-web:${zalandoProblemVersion}"
+    implementation "com.auth0:java-jwt:3.13.0"
 
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
@@ -42,6 +44,7 @@ dependencies {
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
+    testImplementation 'org.springframework.security:spring-security-test'
     testImplementation "io.fabric8:kubernetes-server-mock:${fabric8version}"
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:postgresql'

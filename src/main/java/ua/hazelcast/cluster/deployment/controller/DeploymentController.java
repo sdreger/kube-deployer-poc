@@ -21,7 +21,7 @@ import javax.validation.Valid;
  */
 @Validated
 @RestController
-@RequestMapping(value = "/deployment", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/deployment", produces = MediaType.APPLICATION_JSON_VALUE)
 public class DeploymentController {
 
     private final DeploymentService deploymentService;
