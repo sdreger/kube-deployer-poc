@@ -2,6 +2,7 @@ plugins {
     id 'org.springframework.boot' version '2.3.9.RELEASE'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
+    id 'com.google.cloud.tools.jib' version '2.8.0'
 }
 
 group = 'ua.hazelcast.cluster'
@@ -16,6 +17,9 @@ configurations {
 
 ext {
     generatedMapperSourcesDir = "${buildDir}/generated/sources/annotationProcessor/java/main"
+    dockerJdkImageVersion = "openjdk11:jdk-11.0.10_9-alpine"
+    registry = "registry.hazelcast.com"
+    jarFile = "/application/${project.name}-${project.version}.jar"
 }
 
 repositories {
@@ -63,4 +67,29 @@ test {
 sourceSets.main {
     ext.originalJavaSrcDirs = java.srcDirs
     java.srcDir "${generatedMapperSourcesDir}"
+}
+
+jib {
+    from {
+        image = "adoptopenjdk/${dockerJdkImageVersion}"
+    }
+    to {
+        image = "${registry}/${project.name}"
+        tags = ['latest', project.version]
+    }
+    container {
+        appRoot = '/application'
+        workingDirectory = '/application'
+        extraDirectories {
+            paths {
+                path {
+                    from = file('build/libs/')
+                    into = '/application'
+                }
+            }
+        }
+        entrypoint = ['java', '-jar', jarFile.toString()]
+        ports = ['8080']
+        creationTime = 'USE_CURRENT_TIMESTAMP'
+    }
 }
