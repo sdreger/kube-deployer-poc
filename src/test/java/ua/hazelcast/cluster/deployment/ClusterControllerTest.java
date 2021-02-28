@@ -200,6 +200,29 @@ public class ClusterControllerTest extends AbstractControllerTest {
     }
 
     @Test
+    public void shouldNotCreateDeploymentWithNotAuthorized() throws Exception {
+
+        final CreateDeploymentRequest request = new CreateDeploymentRequest();
+        request.setNamespace(NS_DEFAULT);
+        request.setName(DEPLOYMENT_NAME);
+        request.setLabels(DEPLOYMENT_LABELS);
+        request.setReplicaCount(REPLICAS);
+        request.setContainerPort(CONTAINER_PORT);
+
+        this.mockMvc.perform(post(URL_DEPLOYMENTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.title").exists())
+                .andExpect(jsonPath("$.title").value("Authentication error"))
+                .andExpect(jsonPath("$.detail").exists())
+                .andExpect(jsonPath("$.detail")
+                        .value("Full authentication is required to access this resource"));
+    }
+
+    @Test
     public void shouldCreateDeploymentClusterException() throws Exception {
         final CreateDeploymentRequest request = new CreateDeploymentRequest();
         request.setName(DEPLOYMENT_NAME);
