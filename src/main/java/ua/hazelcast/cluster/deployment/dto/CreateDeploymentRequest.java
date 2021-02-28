@@ -2,6 +2,7 @@ package ua.hazelcast.cluster.deployment.dto;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ua.hazelcast.cluster.deployment.validation.DeploymentUniqueName;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
@@ -17,6 +18,7 @@ public class CreateDeploymentRequest {
     @NotBlank(message = "Namespace must not be blank")
     private String namespace;
 
+    @DeploymentUniqueName
     @NotBlank(message = "Name must not be blank")
     private String name;
 

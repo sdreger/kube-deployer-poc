@@ -181,6 +181,32 @@ public class ClusterControllerTest extends AbstractClusterTest {
     }
 
     @Test
+    public void shouldNotCreateDeploymentWithDuplicatedName() throws Exception {
+
+        final DeploymentEntity testDeployment = createTestDeploymentEntity(DEPLOYMENT_NAME);
+
+        final CreateDeploymentRequest request = new CreateDeploymentRequest();
+        request.setNamespace(NS_DEFAULT);
+        request.setName(DEPLOYMENT_NAME);
+        request.setLabels(DEPLOYMENT_LABELS);
+        request.setReplicaCount(REPLICAS);
+        request.setContainerPort(CONTAINER_PORT);
+
+        this.mockMvc.perform(post(URL_DEPLOYMENTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.violations").exists())
+                .andExpect(jsonPath("$.violations[0].field").value("name"))
+                .andExpect(jsonPath("$.violations[0].message")
+                        .value("Deployment with the name " + DEPLOYMENT_NAME + " already exists"));
+
+        deploymentRepository.delete(testDeployment);
+    }
+
+    @Test
     public void shouldCreateDeploymentClusterException() throws Exception {
         final CreateDeploymentRequest request = new CreateDeploymentRequest();
         request.setName(DEPLOYMENT_NAME);
