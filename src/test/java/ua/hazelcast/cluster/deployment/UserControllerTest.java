@@ -34,10 +34,16 @@ public class UserControllerTest extends AbstractControllerTest {
                 .andDo(print())
                 .andExpect(status().isCreated());
 
-        final Optional<UserEntity> testUser = userRepository.findOneByEmailIgnoreCase(TEST_USER_EMAIL);
+        final Optional<UserEntity> testUser = userRepository.findOneByEmailIgnoreCase(request.getEmail());
         assertThat(testUser).isPresent();
+        final UserEntity userEntity = testUser.get();
+        assertThat(userEntity.getEmail()).isEqualTo(request.getEmail());
+        assertThat(userEntity.getPassword()).isNotEqualTo(request.getPassword()); // It should be hashed
+        assertThat(userEntity.getFirstName()).isEqualTo(request.getFirstName());
+        assertThat(userEntity.getLastName()).isEqualTo(request.getLastName());
+        assertThat(userEntity.getRoles()).hasSize(request.getRoles().size());
 
-        userRepository.delete(testUser.get());
+        userRepository.delete(userEntity);
     }
 
     @Test
@@ -47,5 +53,6 @@ public class UserControllerTest extends AbstractControllerTest {
         assertThat(loginResponse).isNotNull();
         assertThat(loginResponse.getEmail()).isEqualTo(TEST_USER_EMAIL);
         assertThat(loginResponse.getAccessToken()).isNotBlank();
+        assertThat(loginResponse.getExpires()).isNotNull();
     }
 }

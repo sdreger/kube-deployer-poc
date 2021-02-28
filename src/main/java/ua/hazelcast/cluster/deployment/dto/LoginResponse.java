@@ -11,8 +11,11 @@ import lombok.NoArgsConstructor;
 public class LoginResponse {
 
     @JsonProperty("email")
-    String email;
+    private String email;
 
     @JsonProperty("access_token")
-    String accessToken;
+    private String accessToken;
+
+    @JsonProperty("expires")
+    private Long expires;
 }
