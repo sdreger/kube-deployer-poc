@@ -3,6 +3,7 @@ package ua.hazelcast.cluster.deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -48,7 +49,7 @@ public abstract class AbstractClusterTest {
 
     protected static final UUID DEPLOYMENT_CREATION_UUID = UUID.fromString(DEPLOYMENT_CREATION_UID);
 
-    @Autowired
+    @SpyBean
     protected KubernetesClient client;
 
     @Autowired

@@ -2,6 +2,7 @@ package ua.hazelcast.cluster.deployment;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -17,6 +18,7 @@ import ua.hazelcast.cluster.deployment.entity.DeploymentEntity;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -46,7 +48,6 @@ public class ClusterControllerTest extends AbstractClusterTest {
 
         final MockHttpServletResponse response = this.mockMvc.perform(post(URL_DEPLOYMENTS)
                 .contentType(MediaType.APPLICATION_JSON)
-//                        .header(HttpHeaders.AUTHORIZATION, getAccessTokenForSystemUser())
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(status().isCreated())
@@ -71,6 +72,29 @@ public class ClusterControllerTest extends AbstractClusterTest {
         assertThat(deployment.getCreationTimestamp()).isEqualTo(DEPLOYMENT_CREATION_TIMESTAMP);
 
         deploymentRepository.delete(deployment);
+    }
+
+    @Test
+    public void shouldCreateDeploymentClusterException() throws Exception {
+        final CreateDeploymentRequest request = new CreateDeploymentRequest();
+        request.setName(DEPLOYMENT_NAME);
+        request.setNamespace(NS_DEFAULT);
+        request.setLabels(DEPLOYMENT_LABELS);
+        request.setReplicaCount(REPLICAS);
+        request.setContainerPort(CONTAINER_PORT);
+
+        final String errorMessage = "API call error";
+        doThrow(new KubernetesClientException(errorMessage)).when(client).apps();
+
+        this.mockMvc.perform(post(URL_DEPLOYMENTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.title").exists())
+                .andExpect(jsonPath("$.title").value("Application Exception"))
+                .andExpect(jsonPath("$.detail").exists())
+                .andExpect(jsonPath("$.detail").value(errorMessage));
     }
 
     @Test
@@ -168,6 +192,26 @@ public class ClusterControllerTest extends AbstractClusterTest {
     }
 
     @Test
+    public void shouldNotReturnDeploymentStatusClusterException() throws Exception {
+
+        final DeploymentEntity testDeployment = createTestDeploymentEntity(DEPLOYMENT_NAME);
+
+        final String errorMessage = "API call error";
+        doThrow(new KubernetesClientException(errorMessage)).when(client).apps();
+
+        this.mockMvc
+                .perform(get(URL_DEPLOYMENTS + "/rolling/status/" + testDeployment.getId()))
+                .andDo(print())
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.title").exists())
+                .andExpect(jsonPath("$.title").value("Application Exception"))
+                .andExpect(jsonPath("$.detail").exists())
+                .andExpect(jsonPath("$.detail").value(errorMessage));
+
+        deploymentRepository.delete(testDeployment);
+    }
+
+    @Test
     public void shouldDeleteDeployment() throws Exception {
         final DeploymentEntity testDeployment = createTestDeploymentEntity(DEPLOYMENT_NAME);
         this.mockMvc
@@ -193,6 +237,27 @@ public class ClusterControllerTest extends AbstractClusterTest {
                 .andExpect(jsonPath("$.violations[0].message")
                         .value("Deployment with ID 9223372036854775807 doesn't exist"));
     }
+
+    @Test
+    public void shouldNotDeleteDeploymentClusterException() throws Exception {
+
+        final DeploymentEntity testDeployment = createTestDeploymentEntity(DEPLOYMENT_NAME);
+
+        final String errorMessage = "API call error";
+        doThrow(new KubernetesClientException(errorMessage)).when(client).apps();
+
+        this.mockMvc
+                .perform(delete(URL_DEPLOYMENTS + "/" + testDeployment.getId()))
+                .andDo(print())
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.title").exists())
+                .andExpect(jsonPath("$.title").value("Application Exception"))
+                .andExpect(jsonPath("$.detail").exists())
+                .andExpect(jsonPath("$.detail").value(errorMessage));
+
+        deploymentRepository.delete(testDeployment);
+    }
+
 
     private void assertDeploymentResponse(final DeploymentResponse deploymentResponse, final String name) {
         assertThat(deploymentResponse).isNotNull();

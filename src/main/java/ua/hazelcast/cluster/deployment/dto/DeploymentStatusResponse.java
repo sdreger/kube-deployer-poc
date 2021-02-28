@@ -1,15 +1,17 @@
 package ua.hazelcast.cluster.deployment.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Data
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class DeploymentStatusResponse {
 
-    private final String reason;
+    private String reason;
 
-    private final String message;
+    private String message;
 
-    private final boolean rolloutComplete;
+    private boolean rolloutComplete;
 }
