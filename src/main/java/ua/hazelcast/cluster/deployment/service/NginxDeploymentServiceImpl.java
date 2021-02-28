@@ -35,6 +35,8 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
 
     private static final String CONTAINER_IMAGE = "nginx";
 
+    private static final int DEFAULT_CONTAINER_PORT = 80;
+
     private static final String UNKNOWN = "Unknown";
 
     private static final String CONDITION_TYPE_AVAILABLE = "Available";
@@ -68,7 +70,8 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
         final Map<String, String> deploymentLabels = createDeploymentRequest.getLabels();
         final String name = createDeploymentRequest.getName();
         final String container = String.format("%s:%s", CONTAINER_IMAGE, CONTAINER_IMAGE_VERSION);
-        final Integer containerPort = createDeploymentRequest.getContainerPort();
+        final Integer containerPort = createDeploymentRequest.getContainerPort() != null
+                ? createDeploymentRequest.getContainerPort() : DEFAULT_CONTAINER_PORT;
         final Integer replicaCount = createDeploymentRequest.getReplicaCount();
         Deployment deployment = new DeploymentBuilder()
                 .withNewMetadata()
@@ -145,6 +148,7 @@ public class NginxDeploymentServiceImpl implements DeploymentService {
 
     @Override
     public void deleteDeployment(final Long deploymentId) {
+        log.debug("Trying to delete a deployment: {}", deploymentId);
         final DeploymentEntity existingDeployment = deploymentRepository.getOne(deploymentId);
         try {
             clusterClient.apps()

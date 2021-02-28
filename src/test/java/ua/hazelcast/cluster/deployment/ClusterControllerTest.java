@@ -15,6 +15,7 @@ import ua.hazelcast.cluster.deployment.dto.DeploymentResponse;
 import ua.hazelcast.cluster.deployment.dto.DeploymentStatusResponse;
 import ua.hazelcast.cluster.deployment.entity.DeploymentEntity;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +49,7 @@ public class ClusterControllerTest extends AbstractClusterTest {
 
         final MockHttpServletResponse response = this.mockMvc.perform(post(URL_DEPLOYMENTS)
                 .contentType(MediaType.APPLICATION_JSON)
+    //                        .header(HttpHeaders.AUTHORIZATION, getAccessTokenForSystemUser())
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(status().isCreated())
@@ -72,6 +74,110 @@ public class ClusterControllerTest extends AbstractClusterTest {
         assertThat(deployment.getCreationTimestamp()).isEqualTo(DEPLOYMENT_CREATION_TIMESTAMP);
 
         deploymentRepository.delete(deployment);
+    }
+
+    @Test
+    public void shouldNotCreateDeploymentWithoutNamespace() throws Exception {
+        final CreateDeploymentRequest request = new CreateDeploymentRequest();
+        request.setNamespace(null);
+        request.setName(DEPLOYMENT_NAME);
+        request.setLabels(DEPLOYMENT_LABELS);
+        request.setReplicaCount(REPLICAS);
+        request.setContainerPort(CONTAINER_PORT);
+
+        this.mockMvc.perform(post(URL_DEPLOYMENTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.violations").exists())
+                .andExpect(jsonPath("$.violations[0].field").value("namespace"))
+                .andExpect(jsonPath("$.violations[0].message")
+                        .value("Namespace must not be blank"));
+    }
+
+    @Test
+    public void shouldNotCreateDeploymentWithoutName() throws Exception {
+        final CreateDeploymentRequest request = new CreateDeploymentRequest();
+        request.setNamespace(NS_DEFAULT);
+        request.setName(null);
+        request.setLabels(DEPLOYMENT_LABELS);
+        request.setReplicaCount(REPLICAS);
+        request.setContainerPort(CONTAINER_PORT);
+
+        this.mockMvc.perform(post(URL_DEPLOYMENTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.violations").exists())
+                .andExpect(jsonPath("$.violations[0].field").value("name"))
+                .andExpect(jsonPath("$.violations[0].message").value("Name must not be blank"));
+    }
+
+    @Test
+    public void shouldNotCreateDeploymentWithoutLabels() throws Exception {
+        final CreateDeploymentRequest request = new CreateDeploymentRequest();
+        request.setNamespace(NS_DEFAULT);
+        request.setName(DEPLOYMENT_NAME);
+        request.setLabels(Collections.emptyMap());
+        request.setReplicaCount(REPLICAS);
+        request.setContainerPort(CONTAINER_PORT);
+
+        this.mockMvc.perform(post(URL_DEPLOYMENTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.violations").exists())
+                .andExpect(jsonPath("$.violations[0].field").value("labels"))
+                .andExpect(jsonPath("$.violations[0].message")
+                        .value("Labels must contain at least one entry"));
+    }
+
+    @Test
+    public void shouldNotCreateDeploymentWithoutReplicas() throws Exception {
+        final CreateDeploymentRequest request = new CreateDeploymentRequest();
+        request.setNamespace(NS_DEFAULT);
+        request.setName(DEPLOYMENT_NAME);
+        request.setLabels(DEPLOYMENT_LABELS);
+        request.setReplicaCount(null);
+        request.setContainerPort(CONTAINER_PORT);
+
+        this.mockMvc.perform(post(URL_DEPLOYMENTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.violations").exists())
+                .andExpect(jsonPath("$.violations[0].field").value("replicaCount"))
+                .andExpect(jsonPath("$.violations[0].message")
+                        .value("ReplicaCount must not be null"));
+    }
+
+    @Test
+    public void shouldNotCreateDeploymentWithNegativeReplicas() throws Exception {
+        final CreateDeploymentRequest request = new CreateDeploymentRequest();
+        request.setNamespace(NS_DEFAULT);
+        request.setName(DEPLOYMENT_NAME);
+        request.setLabels(DEPLOYMENT_LABELS);
+        request.setReplicaCount(-1);
+        request.setContainerPort(CONTAINER_PORT);
+
+        this.mockMvc.perform(post(URL_DEPLOYMENTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.violations").exists())
+                .andExpect(jsonPath("$.violations[0].field").value("replicaCount"))
+                .andExpect(jsonPath("$.violations[0].message")
+                        .value("ReplicaCount must be a positive value"));
     }
 
     @Test

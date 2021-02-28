@@ -14,6 +14,8 @@ import ua.hazelcast.cluster.deployment.dto.DeploymentStatusResponse;
 import ua.hazelcast.cluster.deployment.service.DeploymentService;
 import ua.hazelcast.cluster.deployment.validation.DeploymentExists;
 
+import javax.validation.Valid;
+
 /**
  * REST controller which allows to manage deployments in the given kubernetes cluster.
  */
@@ -31,7 +33,7 @@ public class DeploymentController {
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public DeploymentResponse createDeployment(final @RequestBody CreateDeploymentRequest createDeploymentRequest) {
+    public DeploymentResponse createDeployment(final @RequestBody @Valid CreateDeploymentRequest createDeploymentRequest) {
         return deploymentService.createDeployment(createDeploymentRequest);
     }
 
