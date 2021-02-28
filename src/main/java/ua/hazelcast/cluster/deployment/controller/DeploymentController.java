@@ -6,15 +6,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ua.hazelcast.cluster.deployment.dto.CreateDeploymentRequest;
 import ua.hazelcast.cluster.deployment.dto.DeploymentResponse;
 import ua.hazelcast.cluster.deployment.dto.DeploymentStatusResponse;
 import ua.hazelcast.cluster.deployment.service.DeploymentService;
+import ua.hazelcast.cluster.deployment.validation.DeploymentExists;
 
 /**
  * REST controller which allows to manage deployments in the given kubernetes cluster.
  */
+@Validated
 @RestController
 @RequestMapping(value = "/deployment", produces = MediaType.APPLICATION_JSON_VALUE)
 public class DeploymentController {
@@ -34,7 +37,7 @@ public class DeploymentController {
 
     @GetMapping("/rolling/status/{deploymentId}")
     public DeploymentStatusResponse getDeploymentRollingStatus(
-            final @PathVariable Long deploymentId,
+            final @PathVariable @DeploymentExists Long deploymentId,
             final @RequestParam(name = "watch", defaultValue = "true", required = false) boolean watch) {
         return deploymentService.getDeploymentRollingStatus(deploymentId, watch);
     }
@@ -45,13 +48,13 @@ public class DeploymentController {
     }
 
     @GetMapping("/{deploymentId}")
-    public DeploymentResponse getDeployment(final @PathVariable Long deploymentId) {
+    public DeploymentResponse getDeployment(final @PathVariable @DeploymentExists Long deploymentId) {
         return deploymentService.getDeployment(deploymentId);
     }
 
     @DeleteMapping("/{deploymentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteDeployment(final @PathVariable Long deploymentId) {
+    public void deleteDeployment(final @PathVariable @DeploymentExists Long deploymentId) {
         deploymentService.deleteDeployment(deploymentId);
     }
 }

@@ -17,10 +17,11 @@ import ua.hazelcast.cluster.deployment.entity.DeploymentEntity;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @AutoConfigureMockMvc
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -45,6 +46,7 @@ public class ClusterControllerTest extends AbstractClusterTest {
 
         final MockHttpServletResponse response = this.mockMvc.perform(post(URL_DEPLOYMENTS)
                 .contentType(MediaType.APPLICATION_JSON)
+//                        .header(HttpHeaders.AUTHORIZATION, getAccessTokenForSystemUser())
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(status().isCreated())
@@ -87,6 +89,21 @@ public class ClusterControllerTest extends AbstractClusterTest {
         assertDeploymentResponse(deploymentResponse, DEPLOYMENT_NAME);
 
         deploymentRepository.delete(testDeployment);
+    }
+
+    @Test
+    public void shouldNotReturnNonExistingDeployment() throws Exception {
+
+        this.mockMvc
+                .perform(get(URL_DEPLOYMENTS + "/" + Long.MAX_VALUE))
+                .andDo(print())
+                .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.violations").exists())
+                .andExpect(jsonPath("$.violations[0].field")
+                        .value("getDeployment.deploymentId"))
+                .andExpect(jsonPath("$.violations[0].message")
+                        .value("Deployment with ID 9223372036854775807 doesn't exist"));
     }
 
     @Test
@@ -136,6 +153,21 @@ public class ClusterControllerTest extends AbstractClusterTest {
     }
 
     @Test
+    public void shouldNotReturnNonExistingDeploymentStatus() throws Exception {
+
+        this.mockMvc
+                .perform(get(URL_DEPLOYMENTS + "/rolling/status/" + Long.MAX_VALUE))
+                .andDo(print())
+                .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.violations").exists())
+                .andExpect(jsonPath("$.violations[0].field")
+                        .value("getDeploymentRollingStatus.deploymentId"))
+                .andExpect(jsonPath("$.violations[0].message")
+                        .value("Deployment with ID 9223372036854775807 doesn't exist"));
+    }
+
+    @Test
     public void shouldDeleteDeployment() throws Exception {
         final DeploymentEntity testDeployment = createTestDeploymentEntity(DEPLOYMENT_NAME);
         this.mockMvc
@@ -145,6 +177,21 @@ public class ClusterControllerTest extends AbstractClusterTest {
 
         final Optional<DeploymentEntity> removedEntity = deploymentRepository.findById(testDeployment.getId());
         assertThat(removedEntity).isEmpty();
+    }
+
+    @Test
+    public void shouldNotDeleteNonExistingDeployment() throws Exception {
+
+        this.mockMvc
+                .perform(delete(URL_DEPLOYMENTS + "/" + Long.MAX_VALUE))
+                .andDo(print())
+                .andExpect(content().contentType(APPLICATION_PROBLEM_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.violations").exists())
+                .andExpect(jsonPath("$.violations[0].field")
+                        .value("deleteDeployment.deploymentId"))
+                .andExpect(jsonPath("$.violations[0].message")
+                        .value("Deployment with ID 9223372036854775807 doesn't exist"));
     }
 
     private void assertDeploymentResponse(final DeploymentResponse deploymentResponse, final String name) {
