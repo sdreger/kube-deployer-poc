@@ -35,7 +35,7 @@ dependencies {
     implementation "io.fabric8:kubernetes-client:${fabric8version}"
     implementation "org.hibernate.validator:hibernate-validator:${hibernateValidatorVersion}"
     implementation "org.zalando:problem-spring-web:${zalandoProblemVersion}"
-    implementation "com.auth0:java-jwt:3.13.0"
+    implementation "com.auth0:java-jwt:${javaJwtVersion}"
 
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
