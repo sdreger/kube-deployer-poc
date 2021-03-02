@@ -66,9 +66,14 @@ Authorization: Bearer {{access_token}}
   "replicaCount": 1
 }
 ```
-- Get a deployment rollout status:
+- Get a deployment rollout status (blocking call):
 ```shell
 GET http://localhost:8080/api/deployment/rolling/status/1?watch=true
+Authorization: Bearer {{access_token}}
+```
+- Get a deployment rollout status (non-blocking call):
+```shell
+GET http://localhost:8080/api/deployment/rolling/status/1
 Authorization: Bearer {{access_token}}
 ```
 - Get a deployment list:
