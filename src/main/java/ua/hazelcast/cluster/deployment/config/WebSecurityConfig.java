@@ -1,7 +1,6 @@
 package ua.hazelcast.cluster.deployment.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -26,19 +25,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final SecurityProblemSupport problemSupport;
 
-    private final Long expirationTime;
-
-    private final String secretKey;
+    private final SecurityProperties securityProperties;
 
     @Autowired
     public WebSecurityConfig(final UserDetailsService userDetailsService,
                              final SecurityProblemSupport problemSupport,
-                             final @Value("${spring.security.jwt.token.expiration-time}") Long expirationTime,
-                             final @Value("${spring.security.jwt.token.secret-key}") String secretKey) {
+                             SecurityProperties securityProperties) {
         this.userDetailsService = userDetailsService;
         this.problemSupport = problemSupport;
-        this.expirationTime = expirationTime;
-        this.secretKey = secretKey;
+        this.securityProperties = securityProperties;
     }
 
     @Bean
@@ -53,6 +48,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .authenticationEntryPoint(problemSupport)
                 .accessDeniedHandler(problemSupport);
 
+        final JWTAuthenticationFilter jwtAuthenticationFilter = new JWTAuthenticationFilter(authenticationManager(),
+                securityProperties.getToken().getExpirationTime(), securityProperties.getToken().getSecretKey());
+        final JWTAuthorizationFilter jwtAuthorizationFilter = new JWTAuthorizationFilter(authenticationManager(),
+                securityProperties.getToken().getSecretKey());
+
         http.cors()
                 .and().authorizeRequests()
                 .antMatchers(HttpMethod.GET, "/actuator/health").permitAll()
@@ -60,8 +60,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.POST, "/api/user/login").permitAll()
                 .anyRequest().authenticated()
                 .and()
-                .addFilter(new JWTAuthenticationFilter(authenticationManager(), expirationTime, secretKey))
-                .addFilter(new JWTAuthorizationFilter(authenticationManager(), secretKey))
+                .addFilter(jwtAuthenticationFilter)
+                .addFilter(jwtAuthorizationFilter)
                 .csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
     }
